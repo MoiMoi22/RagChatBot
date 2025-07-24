@@ -1,0 +1,39 @@
+# Bỏ qua môi trường ảo
+.mvenv/
+.myenv/
+venv/
+.venv/
+env/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Bỏ qua cache Python
+__pycache__/
+*.py[cod]
+
+# Bỏ qua dữ liệu output và index
+chroma_db/
+data/
+*.csv
+*.tsv
+*.xlsx
+*.json
+*.pdf
+*.zip
+*.tar.gz
+*.npy
+*.npz
+*.pkl
+*.joblib
+*.ckpt
+*.pt
+*.pth
+
+# IDE/editor config
+.vscode/
+.idea/
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
