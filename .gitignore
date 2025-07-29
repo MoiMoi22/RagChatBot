@@ -37,3 +37,6 @@ data/
 # Hệ điều hành
 .DS_Store
 Thumbs.db
+
+# Lưu biến môi trường
+.env
