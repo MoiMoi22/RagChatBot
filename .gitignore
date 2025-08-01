@@ -40,3 +40,7 @@ Thumbs.db
 
 # Lưu biến môi trường
 .env
+
+# File thử nghiệm
+advance_rag.ipynb
+rag.ipynb
