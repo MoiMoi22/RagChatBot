@@ -1,0 +1,9 @@
+llama-index-vector-stores-chroma
+llama-index
+sentence-transformers
+llama-index-embeddings-huggingface
+chromadb
+llama-index-llms-groq
+fastapi
+uvicorn
+python-dotenv

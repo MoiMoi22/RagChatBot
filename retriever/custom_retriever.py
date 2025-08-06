@@ -25,22 +25,21 @@ class ChromaDBRetriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
         super().__init__()
 
-    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Retrieve."""
+    def _retrieve(self, query_bundle: QueryBundle, user_department_id: str) -> List[NodeWithScore]:
+        """Retrieve nodes with department filtering logic."""
         if query_bundle.embedding is None:
-            query_embedding = self._embed_model.get_query_embedding(
-                query_bundle.query_str
-            )
+            query_embedding = self._embed_model.get_query_embedding(query_bundle.query_str)
         else:
             query_embedding = query_bundle.embedding
 
         vector_store_query = VectorStoreQuery(
             query_embedding=query_embedding,
             similarity_top_k=self._similarity_top_k,
-            mode=self._query_mode,
+            mode=self._query_mode
         )
         query_result = self._vector_store.query(vector_store_query)
 
+        # Danh sách node + điểm
         nodes_with_scores = []
         for index, node in enumerate(query_result.nodes):
             score: Optional[float] = None
@@ -48,4 +47,25 @@ class ChromaDBRetriever(BaseRetriever):
                 score = query_result.similarities[index]
             nodes_with_scores.append(NodeWithScore(node=node, score=score))
 
-        return nodes_with_scores
+        # === Custom logic ===
+        matched = [n for n in nodes_with_scores if n.node.metadata.get("department_id") == user_department_id]
+        unmatched = [n for n in nodes_with_scores if n.node.metadata.get("department_id") != user_department_id]
+
+        if len(nodes_with_scores) == 0:
+            # Case 3: Không có node nào được retrieve
+            self._case = "no_result"
+            return []
+
+        if len(matched) == 0 and len(unmatched) > 0:
+            # Case 4: Có node nhưng không thuộc phòng ban
+            self._case = "wrong_department"
+            return []
+
+        if len(matched) == len(nodes_with_scores):
+            # Case 1: Toàn bộ đúng phòng ban
+            self._case = "all_match"
+            return matched
+
+        # Case 2: Một phần đúng, một phần sai
+        self._case = "partial_match"
+        return matched
