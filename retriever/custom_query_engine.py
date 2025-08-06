@@ -2,7 +2,7 @@ from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import Response
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import QueryBundle
-from ChromaDBRetriever import ChromaDBRetriever
+from retriever.custom_retriever import ChromaDBRetriever
 
 class DepartmentAwareQueryEngine(BaseQueryEngine):
     def __init__(self, retriever: ChromaDBRetriever, llm, user_department_id: int, callback_manager=None):
