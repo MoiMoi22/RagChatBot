@@ -7,6 +7,10 @@ from llama_index.core.vector_stores import VectorStoreQuery
 from llama_index.core.schema import NodeWithScore
 from typing import Optional
 
+from retriever.query_handling import generate_queries, run_queries, fuse_results
+
+from utils.utils import extract_queries
+
 
 class ChromaDBRetriever(BaseRetriever):
     """Retriever over a chroma vector store."""
@@ -25,7 +29,7 @@ class ChromaDBRetriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
         super().__init__()
 
-    def _retrieve(self, query_bundle: QueryBundle, user_department_id: str) -> List[NodeWithScore]:
+    def _retrieve(self, query_bundle: QueryBundle, user_department_id: int) -> List[NodeWithScore]:
         """Retrieve nodes with department filtering logic."""
         if query_bundle.embedding is None:
             query_embedding = self._embed_model.get_query_embedding(query_bundle.query_str)
@@ -38,7 +42,6 @@ class ChromaDBRetriever(BaseRetriever):
             mode=self._query_mode
         )
         query_result = self._vector_store.query(vector_store_query)
-
         # Danh sách node + điểm
         nodes_with_scores = []
         for index, node in enumerate(query_result.nodes):
@@ -69,3 +72,33 @@ class ChromaDBRetriever(BaseRetriever):
         # Case 2: Một phần đúng, một phần sai
         self._case = "partial_match"
         return matched
+    
+class FusionRetriever(BaseRetriever):
+    """Ensemble retriever with fusion."""
+
+    def __init__(
+        self,
+        llm,
+        retrievers: List[BaseRetriever],
+        embed_model: Any,
+        similarity_top_k: int = 2,
+    ) -> None:
+        """Init params."""
+        self._retrievers = retrievers
+        self._similarity_top_k = similarity_top_k
+        self._llm = llm
+        self._embed_model = embed_model
+        super().__init__()
+
+    def _retrieve(self, query_bundle: QueryBundle, user_department_id: int) -> List[NodeWithScore]:
+        """Retrieve."""
+        raw_queries = generate_queries(
+            self._llm, query_bundle.query_str, num_queries=4
+        )
+        queries = extract_queries(raw_queries)
+        results = run_queries(queries, self._retrievers, self._embed_model, user_department_id)
+        final_results = fuse_results(
+            results, similarity_top_k=self._similarity_top_k
+        )
+
+        return final_results

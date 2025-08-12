@@ -7,3 +7,8 @@ llama-index-llms-groq
 fastapi
 uvicorn
 python-dotenv
+notebook
+underthesea
+llama-index-retrievers-bm25
+llama-index-postprocessor-flag-embedding-reranker
+git+https://github.com/FlagOpen/FlagEmbedding.git

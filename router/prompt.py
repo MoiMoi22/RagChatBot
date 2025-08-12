@@ -1,7 +1,7 @@
 from llama_index.core import PromptTemplate
 
-
-choices = [
+#ROUTER
+choices_router = [
     "DEPARTMENT_QUERY: Loại câu hỏi này liên quan đến một phòng ban cụ thể trong công ty. Thường đề cập đến chính sách, quy trình, nhân sự hoặc công việc của các phòng như Nhân sự, Kỹ thuật, Kinh doanh, Tài chính... Trả lời yêu cầu truy xuất tài liệu nội bộ của phòng ban tương ứng",
     "CHITCHAT_OR_GENERAL: Loại câu hỏi này mang tính trò chuyện (chitchat) hoặc kiến thức chung, không liên quan đến bất kỳ phòng ban cụ thể nào. Bao gồm lời chào hỏi, câu hỏi về AI, kiến thức xã hội, giải trí hoặc các câu hỏi mở",
 ]
@@ -16,7 +16,7 @@ router_prompt0 = PromptTemplate(
     " Đó là những lựa chọn liên quan nhất đến câu hỏi: '{query_str}'\n"
 )
 
-FORMAT_STR = """Output nên được format như là 1 JSON instance mà theo 
+FORMAT_OUTPUT_ROUTER = """Output nên được format như là 1 JSON instance mà theo 
 JSON schema ở dưới. 
 
 Đây là đầu ra của schema:
@@ -35,6 +35,36 @@ JSON schema ở dưới.
     "required": [
       "choice",
       "reason"
+    ],
+    "additionalProperties": false
+  }
+}
+"""
+
+query_gen_prompt = PromptTemplate(
+    "Bạn là một trợ lý hữu ích, có nhiệm vụ tạo ra nhiều câu truy vấn tìm kiếm tiếng Việt "
+    "dựa trên một câu truy vấn đầu vào. Hãy tạo {num_queries} câu truy vấn tìm kiếm, "
+    "mỗi câu trên một dòng, giữ nguyên ý nghĩa nhưng diễn đạt khác nhau, "
+    "có nội dung liên quan chặt chẽ đến câu truy vấn đầu vào:\n"
+    "Câu truy vấn: {query}\n"
+    "Các câu truy vấn:\n"
+)
+
+FORMAT_OUTPUT_ANSWER_QUERIES = """Output nên được format như là 1 JSON instance mà theo 
+JSON schema ở dưới. 
+
+Đây là đầu ra của schema:
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
     ],
     "additionalProperties": false
   }

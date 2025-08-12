@@ -5,15 +5,16 @@ from llama_index.core.schema import QueryBundle
 from retriever.custom_retriever import ChromaDBRetriever
 
 class DepartmentAwareQueryEngine(BaseQueryEngine):
-    def __init__(self, retriever: ChromaDBRetriever, llm, user_department_id: int, callback_manager=None):
+    def __init__(self, retriever: ChromaDBRetriever, llm, user_department_id: int, reranker = None, callback_manager=None):
         super().__init__(callback_manager=callback_manager)
         self.retriever = retriever
         self.llm = llm
         self.user_department_id = user_department_id
+        self.reranker = reranker
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        nodes = self.retriever._retrieve(query_bundle, user_department_id=self.user_department_id)
-        case = self.retriever._case
+        nodes = self.retriever._retrieve(query_bundle, self.user_department_id)
+        case = self.retriever._retrievers[0]._case
 
         if case == "no_result":
             return Response(response="RAG: " + "Không tìm thấy thông tin nào liên quan trong toàn bộ tài liệu.",
@@ -24,6 +25,9 @@ class DepartmentAwareQueryEngine(BaseQueryEngine):
                             metadata={"doc_ids": None})
 
         elif case in ["partial_match", "all_match"]:
+            if self.reranker is not None:
+                nodes = self.reranker.postprocess_nodes(nodes, query_bundle=query_bundle)
+                
             context = "\n".join([n.node.text for n in nodes])
             prompt = f"Trả lời câu hỏi dựa trên thông tin sau:\n\n{context}\n\nCâu hỏi: {query_bundle.query_str}"
             answer = self.llm.complete(prompt)

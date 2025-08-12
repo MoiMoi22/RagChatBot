@@ -6,6 +6,7 @@ from config.embed import load_embed
 from config.llm import load_llm
 from config.vector_store import get_vector_store
 from router.router import routing
+from post_processor.reranker import build_flag_reranker
 
 router = APIRouter()
 
@@ -13,7 +14,7 @@ router = APIRouter()
 embed_model = load_embed()
 llm = load_llm()
 vector_store = get_vector_store("Departments")
-
+reranker = build_flag_reranker(model_id="AITeamVN/Vietnamese_Reranker", top_n=3)
 
 class QuestionRequest(BaseModel):
     question: str
@@ -33,6 +34,7 @@ async def ask_question(req: QuestionRequest):
         vector_store=vector_store,
         embed_model=embed_model,
         llm=llm,
+        reranker=reranker
     )
 
     return ChatMessageResponse(
