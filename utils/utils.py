@@ -4,6 +4,8 @@ from llama_index.core.base.response.schema import Response
 import re
 from underthesea import word_tokenize
 import stopwordsiso as stop
+import math
+from llama_index.core.schema import NodeWithScore
 
 if TYPE_CHECKING:
     # chỉ dùng lúc type-check, KHÔNG chạy ở runtime -> không tạo phụ thuộc import
@@ -44,3 +46,21 @@ stopwords_vi = stop.stopwords("vi")
 def vn_tokenizer_no_stopword(text: str):
     tokens = word_tokenize(text, format="list")
     return [t for t in tokens if t.lower() not in stopwords_vi]
+
+def sigmoid(x: float) -> float:
+    return 1 / (1 + math.exp(-x))
+
+def normalize_and_filter(nodes, threshold=0.8):
+    filtered_nodes = []
+    for node in nodes:
+        score_norm = sigmoid(node.score)
+        if score_norm >= threshold:
+            filtered_nodes.append(NodeWithScore(node=node.node, score=score_norm))
+    return filtered_nodes
+
+def find_keys_by_value(d, value):
+    return [k for k, v in d.items() if v == value]
+
+def get_queries(queries:dict, generated_queries:dict, query: str):
+    query_id = list(find_keys_by_value(queries, query))[0]
+    return generated_queries[query_id]

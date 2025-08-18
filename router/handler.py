@@ -32,16 +32,16 @@ def handle_chitchat(query: str, llm) -> str:
 
 def handle_departments_req(vector_store, embed_model, user_department_id, llm, reranker, query_str: str):
 
-    vector_retriever = ChromaDBRetriever(vector_store=vector_store, embed_model=embed_model, similarity_top_k= 20)
+    vector_retriever = ChromaDBRetriever(vector_store=vector_store, embed_model=embed_model, similarity_top_k= 10)
     bm25_retriever = load_bm25_retriever(vector_store)
     retriever = FusionRetriever(
-    llm, [vector_retriever, bm25_retriever],embed_model, similarity_top_k=10
+    llm, [vector_retriever, bm25_retriever],embed_model, similarity_top_k=20
 )
     custom_query_engine = DepartmentAwareQueryEngine(
         retriever=retriever,
         llm=llm,
         user_department_id= user_department_id,
-        reranker=reranker
+        reranker= reranker
     )
     # query_str = "lịch học skill writing ở tuần 1 thế nào?"
     query_embedding = embed_model.get_query_embedding(query_str)
@@ -56,7 +56,7 @@ def load_bm25_retriever(vector_store):
     docstore.add_documents(nodes)
     bm25_retriever = BM25Retriever.from_defaults(
         docstore=docstore,
-        similarity_top_k=20,
+        similarity_top_k=10,
         stemmer=None,
         skip_stemming=True,
         tokenizer=vn_tokenizer_no_stopword    

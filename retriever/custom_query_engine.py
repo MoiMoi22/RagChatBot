@@ -3,6 +3,7 @@ from llama_index.core.base.response.schema import Response
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import QueryBundle
 from retriever.custom_retriever import ChromaDBRetriever
+from retriever.query_handling import rerank_and_normalize
 
 class DepartmentAwareQueryEngine(BaseQueryEngine):
     def __init__(self, retriever: ChromaDBRetriever, llm, user_department_id: int, reranker = None, callback_manager=None):
@@ -13,28 +14,38 @@ class DepartmentAwareQueryEngine(BaseQueryEngine):
         self.reranker = reranker
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        nodes = self.retriever._retrieve(query_bundle, self.user_department_id)
-        case = self.retriever._retrievers[0]._case
+        nodes = self.retriever._retrieve(query_bundle)
 
-        if case == "no_result":
+        rerank_nodes = self.reranker.postprocess_nodes(nodes, query_bundle=query_bundle)
+        # rerank_nodes = rerank_and_normalize(rerank_nodes,0.8,3)
+
+        for n in rerank_nodes:
+            print(n.score)
+
+        matched = [n for n in rerank_nodes if n.node.metadata.get("department_id") == self.user_department_id]
+        unmatched = [n for n in rerank_nodes if n.node.metadata.get("department_id") != self.user_department_id]
+
+        print(len(matched))
+        print(len(unmatched))
+
+        if len(rerank_nodes) == 0:
             return Response(response="RAG: " + "Không tìm thấy thông tin nào liên quan trong toàn bộ tài liệu.",
                             metadata={"doc_ids": None})
 
-        elif case == "wrong_department":
+
+        if len(matched) == 0 and len(unmatched) > 0:
             return Response(response="RAG: " + "Bạn không có quyền truy cập thông tin của phòng ban khác.",
                             metadata={"doc_ids": None})
 
-        elif case in ["partial_match", "all_match"]:
-            if self.reranker is not None:
-                nodes = self.reranker.postprocess_nodes(nodes, query_bundle=query_bundle)
+        if len(matched) > 0:
                 
-            context = "\n".join([n.node.text for n in nodes])
-            prompt = f"Trả lời câu hỏi dựa trên thông tin sau:\n\n{context}\n\nCâu hỏi: {query_bundle.query_str}"
+            context = "\n".join([n.node.text for n in rerank_nodes])
+            prompt = f"Trả lời câu hỏi không sử dụng thông tin đã được train từ trước chỉ dựa trên thông tin sau:\n\n{context}\n\nCâu hỏi: {query_bundle.query_str}"
             answer = self.llm.complete(prompt)
 
             doc_ids = list(set([
                 n.node.metadata.get("doc_id")
-                for n in nodes
+                for n in matched
                 if n.node.metadata.get("doc_id") is not None
             ])) or None
 

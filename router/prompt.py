@@ -2,7 +2,7 @@ from llama_index.core import PromptTemplate
 
 #ROUTER
 choices_router = [
-    "DEPARTMENT_QUERY: Loại câu hỏi này liên quan đến một phòng ban cụ thể trong công ty. Thường đề cập đến chính sách, quy trình, nhân sự hoặc công việc của các phòng như Nhân sự, Kỹ thuật, Kinh doanh, Tài chính... Trả lời yêu cầu truy xuất tài liệu nội bộ của phòng ban tương ứng",
+    "DEPARTMENT_QUERY: Loại câu hỏi này liên quan đến một phòng ban cụ thể trong công ty. Thường đề cập đến chính sách, quy trình, nhân sự hoặc công việc của các phòng như Nhân sự, Kỹ thuật, Kinh doanh, Tài chính... Trả lời yêu cầu truy xuất tài liệu nội bộ của phòng ban tương ứng. Ngoài ra có phòng ban it helper, chuyên xử lý các vấn đề liên quan đến mạng hay các ứng dụng hay được dùng trong công ty, và có phòng ban xử lý liên quan đến ielts",
     "CHITCHAT_OR_GENERAL: Loại câu hỏi này mang tính trò chuyện (chitchat) hoặc kiến thức chung, không liên quan đến bất kỳ phòng ban cụ thể nào. Bao gồm lời chào hỏi, câu hỏi về AI, kiến thức xã hội, giải trí hoặc các câu hỏi mở",
 ]
 
@@ -69,4 +69,21 @@ JSON schema ở dưới.
     "additionalProperties": false
   }
 }
+"""
+
+
+QUESTION_GEN_USER_TMPL = (
+    "Thông tin ngữ cảnh được trình bày bên dưới.\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Dựa trên thông tin ngữ cảnh và không dùng kiến thức có sẵn, "
+    "hãy tạo ra các câu hỏi liên quan. "
+)
+
+QUESTION_GEN_SYS_TMPL = """
+Bạn là một Giáo viên/ Giảng viên. Nhiệm vụ của bạn là tạo ra 
+{num_questions_per_chunk} câu hỏi cho một bài kiểm tra/ kỳ thi sắp tới. 
+Các câu hỏi cần đa dạng về tính chất trong toàn bộ tài liệu. 
+Hãy giới hạn các câu hỏi trong phạm vi thông tin ngữ cảnh được cung cấp.
 """
