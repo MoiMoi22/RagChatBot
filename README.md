@@ -1,2 +1,1 @@
-# RagChatBot
-# Cập nhật bởi Tấn Phúc - test pull request
+## 1. A RAG Chatbot that name is Lucfin using for Question and Answering
